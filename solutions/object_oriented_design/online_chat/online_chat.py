@@ -1,39 +1,55 @@
 from abc import ABCMeta
 from enum import Enum
 
+# -----------------------------
+# Message Status Enum
+# -----------------------------
+class MessageStatus(Enum):
+    SENT = 0
+    DELIVERED = 1
+    READ = 2
 
+# -----------------------------
+# UserService with messaging logic
+# -----------------------------
 class UserService(object):
 
     def __init__(self):
         self.users_by_id = {}  # key: user id, value: User
 
     def add_user(self, user_id, name, pass_hash):
-        pass
+        user = User(user_id, name, pass_hash)
+        self.users_by_id[user_id] = user
+        return user
 
     def remove_user(self, user_id):
-        pass
+        if user_id in self.users_by_id:
+            del self.users_by_id[user_id]
 
-    def add_friend_request(self, from_user_id, to_user_id):
-        pass
+    def send_message(self, from_user_id, to_user_id, content):
+        if from_user_id not in self.users_by_id or to_user_id not in self.users_by_id:
+            return False
+        message = Message(message_id=101, message=content, timestamp="2024-05-20")
+        message.status = MessageStatus.DELIVERED
+        sender = self.users_by_id[from_user_id]
+        receiver = self.users_by_id[to_user_id]
+        print(f"Message sent from {sender.name} to {receiver.name}. Status: {message.status.name}")
+        return True
 
-    def approve_friend_request(self, from_user_id, to_user_id):
-        pass
-
-    def reject_friend_request(self, from_user_id, to_user_id):
-        pass
-
-
+# -----------------------------
+# User class
+# -----------------------------
 class User(object):
 
     def __init__(self, user_id, name, pass_hash):
         self.user_id = user_id
         self.name = name
         self.pass_hash = pass_hash
-        self.friends_by_id = {}  # key: friend id, value: User
-        self.friend_ids_to_private_chats = {}  # key: friend id, value: private chats
-        self.group_chats_by_id = {}  # key: chat id, value: GroupChat
-        self.received_friend_requests_by_friend_id = {}  # key: friend id, value: AddRequest
-        self.sent_friend_requests_by_friend_id = {}  # key: friend id, value: AddRequest
+        self.friends_by_id = {}  
+        self.friend_ids_to_private_chats = {}  
+        self.group_chats_by_id = {}  
+        self.received_friend_requests_by_friend_id = {}  
+        self.sent_friend_requests_by_friend_id = {}  
 
     def message_user(self, friend_id, message):
         pass
@@ -41,26 +57,15 @@ class User(object):
     def message_group(self, group_id, message):
         pass
 
-    def send_friend_request(self, friend_id):
-        pass
-
-    def receive_friend_request(self, friend_id):
-        pass
-
-    def approve_friend_request(self, friend_id):
-        pass
-
-    def reject_friend_request(self, friend_id):
-        pass
-
-
+# -----------------------------
+# Chat classes
+# -----------------------------
 class Chat(metaclass=ABCMeta):
 
     def __init__(self, chat_id):
         self.chat_id = chat_id
         self.users = []
         self.messages = []
-
 
 class PrivateChat(Chat):
 
@@ -69,24 +74,32 @@ class PrivateChat(Chat):
         self.users.append(first_user)
         self.users.append(second_user)
 
-
 class GroupChat(Chat):
 
     def add_user(self, user):
-        pass
+        self.users.append(user)
 
     def remove_user(self, user):
-        pass
+        if user in self.users:
+            self.users.remove(user)
 
-
+# -----------------------------
+# Message class with status
+# -----------------------------
 class Message(object):
 
     def __init__(self, message_id, message, timestamp):
         self.message_id = message_id
         self.message = message
         self.timestamp = timestamp
+        self.status = MessageStatus.SENT
 
+    def update_status(self, new_status):
+        self.status = new_status
 
+# -----------------------------
+# AddRequest and RequestStatus
+# -----------------------------
 class AddRequest(object):
 
     def __init__(self, from_user_id, to_user_id, request_status, timestamp):
@@ -95,9 +108,7 @@ class AddRequest(object):
         self.request_status = request_status
         self.timestamp = timestamp
 
-
 class RequestStatus(Enum):
-
     UNREAD = 0
     READ = 1
     ACCEPTED = 2
